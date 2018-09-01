@@ -1,17 +1,17 @@
 import React from 'react';
 import Expo from 'expo';
 import {createStackNavigator} from 'react-navigation';
-import {StyleSheet, AsyncStorage} from 'react-native';
+import {StyleSheet, AsyncStorage, View} from 'react-native';
 import {
   Body,
   Button,
   CheckBox,
   Container,
-  Item,
   Content,
   Footer,
   Header,
   Input,
+  Item,
   Left,
   List,
   ListItem,
@@ -20,29 +20,40 @@ import {
   Title
 } from 'native-base';
 
-const NoteView = ({txt, isDone, onCheck, id, onItemView}) => (
+const NoteView = ({
+  txt,
+  isDone,
+  onCheck,
+  id,
+  onItemView,
+  onItemEdit
+}) => (
   <ListItem>
-    <Left>
-      <Left>
+    <View style={styles.itemContent}>
+      <View style={styles.checkedCol}>
         <CheckBox checked={isDone} onPress={() => onCheck(id)}/>
-      </Left>
-      <Body>
+      </View>
+      <View style={styles.textCol}>
         <Text style={isDone
           ? styles.doneText
           : {}}>{txt}</Text>
-      </Body>
-    </Left>
-    <Right>
-      <Button onPress={() => onItemView(id)}>
-        <Text>View</Text>
-      </Button>
-    </Right>
+      </View>
+      <View style={styles.buttonCol}>
+        <Button onPress={() => onItemView(id)}>
+          <Text>View</Text>
+        </Button>
+      </View>
+      <View style={styles.buttonCol}>
+        <Button onPress={() => onItemEdit(id)}>
+          <Text>Edit</Text>
+        </Button>
+      </View>
+    </View>
   </ListItem>
 );
-
 const KEY_NOTES = 'devmeeting:notes';
-
-class HomeScreen extends React.Component {
+class HomeScreen extends
+React.Component {
   state = {
     newNoteValue: '',
     showOnlyDone: false,
@@ -50,7 +61,7 @@ class HomeScreen extends React.Component {
   }
 
   static navigationOptions = {
-    title: 'Home'
+    title: 'My notes'
   };
 
   async componentWillMount() {
@@ -133,6 +144,17 @@ class HomeScreen extends React.Component {
       .navigate('Item', note);
   }
 
+  onItemEdit = (id) => {
+    const note = this
+      .state
+      .notes
+      .find((i) => i.id === id);
+    this
+      .props
+      .navigation
+      .navigate('EditItem', note);
+  }
+
   onItemCheck = (id) => {
     const toggleNoteState = (note) => {
       if (note.id !== id) {
@@ -159,7 +181,7 @@ class HomeScreen extends React.Component {
       <Container>
         <Header>
           <Left>
-            <Title>My notes</Title>
+            <Title>List of notes</Title>
           </Left>
           <Right>
             <Button transparent onPress={this.toggleOnlyDone}>
@@ -175,7 +197,11 @@ class HomeScreen extends React.Component {
               .state
               .notes
               .filter(item => !this.state.showOnlyDone || !item.isDone)
-              .map(item => (<NoteView {...item} onCheck={this.onItemCheck} onItemView={this.onItemView}/>))}
+              .map(item => (<NoteView
+                {...item}
+                onCheck={this.onItemCheck}
+                onItemEdit={this.onItemEdit}
+                onItemView={this.onItemView}/>))}
           </List>
         </Content>
         <Footer>
@@ -199,29 +225,54 @@ class HomeScreen extends React.Component {
   }
 }
 
-const ItemScreen = ({navigation}) => (
+const EditItemScreen = ({navigation}) => (
   <Container>
+    <Header>
+      <Body>
+        <Title>ID: {navigation.getParam('id')}</Title>
+      </Body>
+    </Header>
     <Content>
-      <Text>ID: {navigation.getParam('id')}</Text>
-      <Text>Text: {navigation.getParam('txt')}</Text>
-      <Text>Is done?: {String(navigation.getParam('isDone'))}</Text>
+      <Text style={styles.noteText}>TBD</Text>
     </Content>
   </Container>
 )
 
-ItemScreen.navigationOptions = ({navigation}) => ({
-  title: `Item "${navigation.getParam('id')}"`
-})
+EditItemScreen.navigationOptions = ({navigation}) => ({title: 'Edit note'})
+
+const ItemScreen = ({navigation}) => (
+  <Container>
+    <Header>
+      <Left>
+        <Title>ID: {navigation.getParam('id')}</Title>
+      </Left>
+      <Right>
+        <Title>
+          {navigation.getParam('isDone')
+            ? '[done]'
+            : '[undone]'}
+        </Title>
+      </Right>
+    </Header>
+    <Content>
+      <Text style={styles.noteText}>{navigation.getParam('txt')}</Text>
+    </Content>
+  </Container>
+)
+
+ItemScreen.navigationOptions = () => ({title: `Note details`})
 
 const Navigator = createStackNavigator({
   Home: {
     screen: HomeScreen
   },
+  EditItem: {
+    screen: EditItemScreen
+  },
   Item: {
     screen: ItemScreen
   }
 }, {initialRouteName: 'Home'});
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -239,9 +290,29 @@ const styles = StyleSheet.create({
   },
   newNoteInput: {
     color: 'white'
+  },
+  checkedCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40
+  },
+  textCol: {
+    flex: 1,
+    flexGrow: 1,
+    flexDirection: 'row'
+  },
+  buttonCol: {
+    width: 80
+  },
+  itemContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    flexDirection: 'row'
+  },
+  noteText: {
+    padding: 20
   }
 });
-
 export default class App extends React.Component {
   state = {
     isAppLoading: true
