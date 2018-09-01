@@ -1,5 +1,6 @@
 import React from 'react';
-import Expo from "expo";
+import Expo from 'expo';
+import {createStackNavigator} from 'react-navigation';
 import {StyleSheet, AsyncStorage} from 'react-native';
 import {
   Body,
@@ -19,35 +20,41 @@ import {
   Title
 } from 'native-base';
 
-const NoteView = ({txt, isDone, onCheck, id}) => (
+const NoteView = ({txt, isDone, onCheck, id, onItemView}) => (
   <ListItem>
-    <CheckBox checked={isDone} onPress={() => onCheck(id)}/>
-    <Body>
-      <Text style={isDone
-        ? styles.doneText
-        : {}}>{txt}</Text>
-    </Body>
+    <Left>
+      <Left>
+        <CheckBox checked={isDone} onPress={() => onCheck(id)}/>
+      </Left>
+      <Body>
+        <Text style={isDone
+          ? styles.doneText
+          : {}}>{txt}</Text>
+      </Body>
+    </Left>
+    <Right>
+      <Button onPress={() => onItemView(id)}>
+        <Text>View</Text>
+      </Button>
+    </Right>
   </ListItem>
 );
 
 const KEY_NOTES = 'devmeeting:notes';
 
-class App extends React.Component {
+class HomeScreen extends React.Component {
   state = {
     newNoteValue: '',
-    isAppLoading: true,
     showOnlyDone: false,
     notes: []
   }
 
+  static navigationOptions = {
+    title: 'Home'
+  };
+
   async componentWillMount() {
-    await Expo
-      .Font
-      .loadAsync({'Roboto': require('native-base/Fonts/Roboto.ttf'), 'Roboto_medium': require('native-base/Fonts/Roboto_medium.ttf')});
-
     const storedNotes = await this.getStoredNotes();
-
-    this.setState({isAppLoading: false});
 
     if (storedNotes.length) {
       this.setState({notes: storedNotes})
@@ -115,6 +122,17 @@ class App extends React.Component {
     }, this.storeNotes);
   }
 
+  onItemView = (id) => {
+    const note = this
+      .state
+      .notes
+      .find((i) => i.id === id);
+    this
+      .props
+      .navigation
+      .navigate('Item', note);
+  }
+
   onItemCheck = (id) => {
     const toggleNoteState = (note) => {
       if (note.id !== id) {
@@ -137,9 +155,6 @@ class App extends React.Component {
   }
 
   render() {
-    if (this.state.isAppLoading) {
-      return <Expo.AppLoading/>;
-    }
     return (
       <Container>
         <Header>
@@ -160,7 +175,7 @@ class App extends React.Component {
               .state
               .notes
               .filter(item => !this.state.showOnlyDone || !item.isDone)
-              .map(item => (<NoteView {...item} onCheck={this.onItemCheck}/>))}
+              .map(item => (<NoteView {...item} onCheck={this.onItemCheck} onItemView={this.onItemView}/>))}
           </List>
         </Content>
         <Footer>
@@ -184,6 +199,29 @@ class App extends React.Component {
   }
 }
 
+const ItemScreen = ({navigation}) => (
+  <Container>
+    <Content>
+      <Text>ID: {navigation.getParam('id')}</Text>
+      <Text>Text: {navigation.getParam('txt')}</Text>
+      <Text>Is done?: {String(navigation.getParam('isDone'))}</Text>
+    </Content>
+  </Container>
+)
+
+ItemScreen.navigationOptions = ({navigation}) => ({
+  title: `Item "${navigation.getParam('id')}"`
+})
+
+const Navigator = createStackNavigator({
+  Home: {
+    screen: HomeScreen
+  },
+  Item: {
+    screen: ItemScreen
+  }
+}, {initialRouteName: 'Home'});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -204,4 +242,23 @@ const styles = StyleSheet.create({
   }
 });
 
-export default App;
+export default class App extends React.Component {
+  state = {
+    isAppLoading: true
+  };
+
+  async componentWillMount() {
+    await Expo
+      .Font
+      .loadAsync({'Roboto': require('native-base/Fonts/Roboto.ttf'), 'Roboto_medium': require('native-base/Fonts/Roboto_medium.ttf')});
+
+    this.setState({isAppLoading: false});
+
+  }
+  render() {
+    if (this.state.isAppLoading) {
+      return <Expo.AppLoading/>;
+    }
+    return <Navigator/>;
+  }
+}
