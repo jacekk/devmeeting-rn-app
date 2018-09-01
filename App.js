@@ -133,7 +133,7 @@ class App extends React.Component {
   }
 
   storeNotes = () => {
-    // AsyncStorage.setItem(KEY_NOTES, JSON.stringify(this.state.notes));
+    AsyncStorage.setItem(KEY_NOTES, JSON.stringify(this.state.notes));
   }
 
   render() {
