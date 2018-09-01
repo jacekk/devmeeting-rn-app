@@ -1,10 +1,18 @@
 import React from 'react';
-import {StyleSheet, Text, View, FlatList} from 'react-native';
+import {StyleSheet} from 'react-native';
+import {
+  Container,
+  Header,
+  Content,
+  List,
+  ListItem,
+  Text
+} from 'native-base';
 
-const NoteView = ({item}) => (
-  <View style={styles.item}>
-    <Text>{item.txt}</Text>
-  </View>
+const NoteView = ({txt}) => (
+  <ListItem>
+    <Text>{txt}</Text>
+  </ListItem>
 );
 
 export default class App extends React.Component {
@@ -20,9 +28,17 @@ export default class App extends React.Component {
 
   render() {
     return (
-      <View style={styles.container}>
-        <FlatList data={this.state.notes} renderItem={NoteView}/>
-      </View>
+      <Container>
+        <Header />
+        <Content>
+          <List>
+            {this
+              .state
+              .notes
+              .map(item => (<NoteView {...item}/>))}
+          </List>
+        </Content>
+      </Container>
     );
   }
 }
